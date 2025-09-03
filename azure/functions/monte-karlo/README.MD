@@ -13,3 +13,4 @@ func start
 
 curl "http://localhost:7071/api/monteKarloFunc?samples=50000"
 
+azure\functions\monte-karlo\monteKarloFunc
