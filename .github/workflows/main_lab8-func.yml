@@ -1,19 +1,19 @@
-name: Build and Deploy Python Azure Function - lab8-func
+name: Deploy Python Azure Function
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'azure/functions/monte-karlo' 
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'azure/functions/monte-karlo'
   PYTHON_VERSION: '3.12'
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
+      id-token: write
       contents: read
 
     steps:
@@ -25,30 +25,10 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Validate requirements.txt
+      - name: Test install dependencies locally
         run: |
           cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           pip install -r requirements.txt
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: python-app
-          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    permissions:
-      id-token: write
-      contents: read
-
-    steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: python-app
-          path: ./app
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -69,5 +49,4 @@ jobs:
         with:
           app-name: 'lab8-func'
           slot-name: 'Production'
-          package: ./app
-          
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
