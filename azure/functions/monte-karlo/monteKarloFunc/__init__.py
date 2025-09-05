@@ -21,7 +21,6 @@ def estimate_pi(num_samples: int) -> float:
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Python HTTP trigger function for PI estimation started.")
 
-    # --- Получаем параметры запроса ---
     samples = req.params.get("samples")
     save = req.params.get("save")  # save = "true" или "false"
 
@@ -38,9 +37,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     except (TypeError, ValueError):
         samples = 10000  # default
 
-    save = str(save).lower() == "true"  # приводим к bool
+    save = str(save).lower() == "true"
 
-    # --- Считаем Pi ---
     pi_estimate = estimate_pi(samples)
 
     result = {
