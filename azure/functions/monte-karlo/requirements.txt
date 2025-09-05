@@ -1,8 +1,4 @@
-# Azure Functions runtime
-azure-functions==2.14.0
-
-# Managed Identity
+azure-functions==1.24.0
 azure-identity==1.17.0
-
-# Blob Storage
 azure-storage-blob==12.26.0
+cryptography==43.0.3
