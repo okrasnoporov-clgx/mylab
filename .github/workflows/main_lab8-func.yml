@@ -1,4 +1,4 @@
-name: Build and deploy Python project to Azure Function App - lab8-func
+name: Build and Deploy Python Azure Function - lab8-func
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: 'azure/functions/monte-karlo' 
-  PYTHON_VERSION: '3.12' 
+  PYTHON_VERSION: '3.12'
 
 jobs:
   build:
@@ -20,28 +20,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python version
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install dependencies into local folder
+      - name: Validate requirements.txt
         run: |
           cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          # создаем папку для зависимостей
-          mkdir -p .python_packages/lib/site-packages
-          pip install -r requirements.txt --target="./.python_packages/lib/site-packages"
+          pip install -r requirements.txt
 
-      - name: Zip artifact for deployment
-        run: |
-          cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          zip -r release.zip ./* -x "venv/*"
-
-      - name: Upload artifact for deployment job
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-app
-          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/release.zip
+          path: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -51,16 +44,12 @@ jobs:
       contents: read
 
     steps:
-      - name: Download artifact from build job
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: python-app
+          path: ./app
 
-      - name: Unzip artifact for deployment
-        run: |
-          unzip release.zip
-          rm release.zip
-        
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -68,17 +57,17 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_EE8CD8BA27CC4384AC48FBB92C85E081 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A12685D133B349B39969A354DA96060F }}
 
-      - name: "Set app settings"
+      - name: Set app settings
         run: |
           az functionapp config appsettings set \
             --name lab8-func \
             --resource-group epam-avk-lab01-dev-resources \
             --settings STORAGE_ACCOUNT_NAME=sgeb001account          
 
-      - name: 'Deploy to Azure Functions'
+      - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
-        id: deploy-to-function
         with:
           app-name: 'lab8-func'
           slot-name: 'Production'
-          package: .
+          package: ./app
+          
