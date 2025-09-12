@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Decimal → HEX (простой тест)</title>
+  <style>
+    :root{font-family:Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial; color:#111}
+    body{display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f6f8fa}
+    .card{width:min(720px,95%);background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(16,24,40,0.08);padding:24px}
+    h1{margin:0 0 12px;font-size:20px}
+    p.lead{margin:0 0 18px;color:#475569}
+    label{display:block;margin-bottom:8px;font-weight:600}
+    input[type="text"]{width:100%;padding:10px 12px;border:1px solid #e6e9ef;border-radius:8px;font-size:16px}
+    .row{display:flex;gap:10px;margin-top:12px;align-items:center}
+    .result{flex:1;padding:12px;border-radius:8px;border:1px dashed #e6e9ef;background:#fbfdff;min-height:48px;display:flex;align-items:center;justify-content:space-between}
+    .hex{font-family:Consolas,monospace;font-weight:700;font-size:16px;color:#0f172a}
+    button{padding:8px 12px;border-radius:8px;border:none;background:#0ea5a4;color:#fff;font-weight:600;cursor:pointer}
+    button.secondary{background:#64748b}
+    .hint{margin-top:10px;color:#64748b;font-size:13px}
+    .error{color:#b91c1c;font-weight:600}
+    footer{margin-top:18px;color:#94a3b8;font-size:13px}
+  </style>
+</head>
+<body>
+  <main class="card" role="main">
+    <h1>Decimal → HEX — простой тест</h1>
+    <p class="lead">Введи целое десятичное число — результат отобразится в шестнадцатеричном формате (HEX).</p>
+
+    <label for="num">Введите целое число (например: 42 или -255)</label>
+    <input id="num" type="text" inputmode="numeric" autocomplete="off" placeholder="Введите число..." />
+
+    <div class="row">
+      <div class="result" id="resultBox">
+        <div>
+          <div style="font-size:12px;color:#64748b">HEX</div>
+          <div id="hex" class="hex">—</div>
+          <div id="note" class="hint" style="margin-top:6px"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button id="copyBtn">Копировать</button>
+          <button id="clearBtn" class="secondary">Очистить</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="error" class="hint" style="margin-top:10px"></div>
+
+    <footer>
+      Поддерживаются только целые числа (поле не принимает дробные). Для очень больших целых (больше 2³⁰) используется BigInt.
+    </footer>
+  </main>
+
+  <script>
+    const input = document.getElementById('num');
+    const hexEl = document.getElementById('hex');
+    const noteEl = document.getElementById('note');
+    const errorEl = document.getElementById('error');
+    const copyBtn = document.getElementById('copyBtn');
+    const clearBtn = document.getElementById('clearBtn');
+
+    function toHexStringForIntegerStr(str) {
+      const s = String(str).trim();
+      if (!s) return { ok: true, hex: '—', note: '' };
+
+      const intMatch = /^([+-]?)(\d+)$/.exec(s);
+      if (!intMatch) {
+        return { ok: false, msg: 'Введите, пожалуйста, целое число без десятичной точки.' };
+      }
+
+      const sign = intMatch[1] === '-' ? '-' : '';
+      const digits = intMatch[2];
+
+      try {
+        const MAX_SAFE_DIGITS = 15;
+        let hex;
+        if (digits.length <= MAX_SAFE_DIGITS) {
+          const n = Number(sign + digits);
+          hex = n.toString(16).toUpperCase();
+        } else {
+          // BigInt
+          const bi = BigInt(sign + digits);
+          hex = bi.toString(16).toUpperCase();
+        }
+        const display = (hex === '—') ? '—' : (hex.startsWith('-') ? '-0x' + hex.slice(1) : '0x' + hex);
+        const note = (digits.length > MAX_SAFE_DIGITS) ? 'Вычислено с использованием BigInt.' : '';
+        return { ok: true, hex: display, note };
+      } catch (e) {
+        return { ok: false, msg: 'Не удалось обработать число: ' + e.message };
+      }
+    }
+
+    function update() {
+      const v = input.value;
+      const res = toHexStringForIntegerStr(v);
+      if (!res.ok) {
+        hexEl.textContent = '—';
+        noteEl.textContent = '';
+        errorEl.textContent = res.msg;
+        errorEl.className = 'error';
+        return;
+      }
+      hexEl.textContent = res.hex;
+      noteEl.textContent = res.note;
+      errorEl.textContent = '';
+      errorEl.className = 'hint';
+    }
+
+    input.addEventListener('input', update);
+
+    copyBtn.addEventListener('click', async () => {
+      const text = hexEl.textContent;
+      if (!text || text === '—') return;
+      try {
+        await navigator.clipboard.writeText(text);
+        copyBtn.textContent = 'Скопировано!';
+        setTimeout(() => copyBtn.textContent = 'Копировать', 1200);
+      } catch (e) {
+        copyBtn.textContent = 'Ошибка';
+        setTimeout(() => copyBtn.textContent = 'Копировать', 1200);
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      update();
+      input.focus();
+    });
+
+    update();
+  </script>
+</body>
+</html>
