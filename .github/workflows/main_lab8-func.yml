@@ -1,8 +1,6 @@
 name: Deploy Python Azure Function
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 env:
@@ -52,3 +50,4 @@ jobs:
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           
+
