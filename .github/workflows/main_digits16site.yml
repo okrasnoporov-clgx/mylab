@@ -1,4 +1,4 @@
-name: Deploy static site to Azure Web App - digits16site
+name: Deploy Node.js static site to Azure Web App - digits16site
 
 on:
   workflow_dispatch:
@@ -13,6 +13,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+
+      - name: Install dependencies
+        run: |
+          cd azure/appService/webapp
+          npm install
 
       - name: Login to Azure
         uses: azure/login@v2
