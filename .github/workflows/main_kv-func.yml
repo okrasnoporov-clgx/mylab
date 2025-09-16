@@ -1,1 +1,53 @@
+name: Deploy Python Azure Function
+
+on:
+  workflow_dispatch:
+
+env:
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'azure/functions/monte-karlo'
+  PYTHON_VERSION: '3.12'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies into .python_packages
+        run: |
+          cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          mkdir -p .python_packages/lib/site-packages
+          pip install -r requirements.txt --target=".python_packages/lib/site-packages"
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D24A7B4A71204F84B13D647BCDAC94A3 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_EE8CD8BA27CC4384AC48FBB92C85E081 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_A12685D133B349B39969A354DA96060F }}
+
+      - name: Set app settings
+        run: |
+          az functionapp config appsettings set \
+            --name lab8-func \
+            --resource-group epam-avk-lab01-dev-resources \
+            --settings STORAGE_ACCOUNT_NAME=sgeb001account          
+
+      - name: Deploy to Azure Functions (with prebuilt dependencies)
+        uses: Azure/functions-action@v1
+        with:
+          app-name: 'lab8-func'
+          slot-name: 'Production'
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          
 
