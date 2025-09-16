@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'azure/functions/monte-karlo'
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'azure/functions/keyvault'
   PYTHON_VERSION: '3.12'
 
 jobs:
