@@ -1,6 +1,6 @@
 # mylab
 
-AWS infrastructure
+AWS Cloud Services
 
-Azure infrastructure
+Azure Cloud Services
 
