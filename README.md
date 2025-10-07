@@ -12,3 +12,7 @@ https://open-policy-agent.github.io/gatekeeper/website/docs/
 
 APIs:
 https://camaraproject.org/structure/
+
+AEM:
+https://video.tv.adobe.com/v/30216
+
