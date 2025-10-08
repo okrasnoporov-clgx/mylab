@@ -16,9 +16,11 @@ GitHub Agent - https://githubnext.github.io/gh-aw/
 GitHub MCP - https://www.youtube.com/watch?v=d3QpQO6Paeg
 Claude Beast - https://medium.com/@santosjohncasper/copilot-beastmode-how-to-use-gpt-4-1-in-vs-code-like-claude-sonnet-4-dffd0f097eb5
 Terraform MCP - https://developer.hashicorp.com/terraform/docs/tools/mcp-server
-https://smithery.ai/
-https://build.microsoft.com/en-US/sessions/BRK100?source=sessions
-https://chatgpt.com/g/g-68110ebafb348191b0c8d82d000f7c43-absolute-mode
+- https://smithery.ai/
+- https://build.microsoft.com/en-US/sessions/BRK100?source=sessions
+- https://chatgpt.com/g/g-68110ebafb348191b0c8d82d000f7c43-absolute-mode
+- https://claude.com/solutions/coding
+
 
 
 APIs:
