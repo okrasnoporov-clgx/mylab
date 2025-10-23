@@ -1,6 +1,7 @@
 # mylab
 
-AWS infrastructure
+AWS Cloud Services
 
-Azure infrastructure
+MS Azure Cloud Services
 
+Google Cloud Platform

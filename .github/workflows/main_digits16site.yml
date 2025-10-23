@@ -1,0 +1,39 @@
+name: Deploy Node.js static site to Azure Web App - digits16site
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '22.x'
+
+      - name: Install dependencies
+        run: |
+          cd azure/appService/webapp
+          npm install
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5DF2190DF5F64278AB88BA7E9A3DA63A }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_7E44B2EAD87F44BA9A2EEC62542857E2 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_737B801C742F4754AA008ACFB12704C7 }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'digits16site'
+          slot-name: 'Production'
+          package: azure/appService/webapp/.
