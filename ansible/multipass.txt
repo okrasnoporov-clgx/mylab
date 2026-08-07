@@ -1,0 +1,10 @@
+https://canonical.com/multipass/install
+
+### Start VMs
+
+multipass launch -name anode1
+
+multipass list
+
+multipass exec anode1 -- bash
+
