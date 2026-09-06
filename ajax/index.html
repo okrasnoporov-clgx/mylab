@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>AJAX demo</title>
+</head>
+<body>
+
+    <button id="loadButton">Load Data</button>
+
+    <div id="result">
+        Here will appear the server's response
+    </div>
+
+    <script>
+        document.getElementById("loadButton").onclick = function () {
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.open("GET", "data.txt", true);
+
+            xhr.onload = function () {
+                document.getElementById("result").textContent =
+                    xhr.responseText;
+            };
+
+            xhr.send();
+        };
+    </script>
+
+</body>
+</html>
