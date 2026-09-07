@@ -1,0 +1,21 @@
+GitOps principles:
+1. Git is the source of truth
+2. Desired system state is versioned in Git
+3. System state described declaratively
+4. Git as the single place for operations (change, create, delete)
+5. Autonomous Agents enforce desired state and alert on drift
+6. Automated delivery of Approved system state changes
+
+GitOps Architecture components:
+1. Source Control System (ADO, GitHub, GitLab etc)
+2. Git Repository
+3. Container/Helm Registry
+4. GitOps operator ( i.e. Flux, ArgoCD, Kubectl apply, terraform K8s provider etc)
+5. Runtime environment (K8s Cluster multiple NS or Cluster per Env)
+6. Namespaces (NS per env, per app, per build, per engineer etc)
+
+GitOps usecases:
+1. Cloud Native App Management (i.e. CD in CICD)
+2. Service rollouts
+3. Infrastructure management (K8s clusters, fleets, etc)
+
