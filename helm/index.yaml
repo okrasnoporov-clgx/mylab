@@ -1,0 +1,11 @@
+apiVersion: v1
+entries:
+  chart1:
+  - apiVersion: v2
+    created: "2025-07-23T12:32:36.6129001+03:00"
+    digest: abbaa527ef078e9437e8e0b7ea7b296a6d9240823caab1b28a57db119bd9a289
+    name: chart1
+    urls:
+    - helm-charts/chart1-0.0.1.tgz
+    version: 0.0.1
+generated: "2025-07-23T12:32:36.5994112+03:00"
