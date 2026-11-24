@@ -1,0 +1,111 @@
+iperf3 — один из основных инструментов для проверки производительности сетевых соединений.
+
+Bandwidth	Пропускная способность, Mbit/s или Gbit/s
+Throughput	Фактическая скорость передачи данных
+Retransmissions	Повторные передачи TCP-сегментов
+Jitter	Изменение задержки между UDP-пакетами
+Packet loss	Потеря UDP-пакетов
+TCP window	Размер окна TCP
+Parallel streams	Производительность нескольких потоков одновременно
+
+!!! не измеряет время выполнения SQL-запроса, скорость обработки HTTP-запроса или производительность CPU приложения.
+
+-----------------------------------------------------------------------------
+
+sudo apt update
+sudo apt install iperf3 -y
+
+iperf3 --version
+which iperf3
+
+---------------------------LOCAL TESTS ------------------------------
+iperf3 -s
+iperf3 -c 127.0.0.1
+
+Connecting to host 127.0.0.1, port 5201
+[  5] local 127.0.0.1 port 37874 connected to 127.0.0.1 port 5201
+[ ID] Interval           Transfer     Bitrate         Retr  Cwnd
+[  5]   0.00-1.00   sec  5.12 GBytes  43.9 Gbits/sec    0   1.50 MBytes       
+[  5]   1.00-2.00   sec  5.23 GBytes  44.9 Gbits/sec    0   2.06 MBytes       
+[  5]   2.00-3.00   sec  4.68 GBytes  40.2 Gbits/sec    1   4.12 MBytes       
+[  5]   3.00-4.00   sec  5.05 GBytes  43.3 Gbits/sec    1   4.12 MBytes       
+[  5]   4.00-5.00   sec  5.05 GBytes  43.4 Gbits/sec    1   4.12 MBytes       
+[  5]   5.00-6.00   sec  5.07 GBytes  43.5 Gbits/sec    0   4.12 MBytes       
+[  5]   6.00-7.00   sec  4.89 GBytes  42.0 Gbits/sec    0   4.12 MBytes       
+[  5]   7.00-8.00   sec  5.26 GBytes  45.2 Gbits/sec    0   4.12 MBytes       
+[  5]   8.00-9.00   sec  5.17 GBytes  44.4 Gbits/sec    0   4.12 MBytes       
+[  5]   9.00-10.00  sec  4.63 GBytes  39.7 Gbits/sec    1   4.12 MBytes       
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate         Retr
+[  5]   0.00-10.00  sec  50.6 GBytes  43.4 Gbits/sec    4             sender
+[  5]   0.00-10.00  sec  50.6 GBytes  43.4 Gbits/sec                  receiver
+
+-----------------------------------------------------------------------------
+
+TCP	        iperf3 -c 127.0.0.1
+30 секунд	iperf3 -c 127.0.0.1 -t 30
+Reverse	    iperf3 -c 127.0.0.1 -R
+4 потока	iperf3 -c 127.0.0.1 -P 4
+UDP     	iperf3 -c 127.0.0.1 -u -b 100M
+Bidirectional	iperf3 -c 127.0.0.1 --bidir
+JSON     	iperf3 -c 127.0.0.1 -J
+
+----------------------------------------------------------------------
+
+ip -br addr
+
+WSL Ubuntu IP	172.22.218.75
+Подсеть WSL	172.22.208.0/20
+Windows host gateway	172.22.208.1
+Интерфейс	eth0
+---------------------------------------------------------------------
+
+WINDOWS SMART APP BLOCK:
+
+Get-Command iperf3 -All | Format-List Source, CommandType
+
+Source      : c:\tools\iperf3.exe
+CommandType : Application
+
+
+$exe = (Get-Command iperf3).Source
+Get-AuthenticodeSignature $exe | Format-List Status, StatusMessage, SignerCertificate
+
+Status            : NotSigned
+StatusMessage     : The file C:\tools\iperf3.exe is not digitally signed. You cannot run this script on the current system. For more information about running scripts and
+                    setting execution policy, see about_Execution_Policies at https:/go.microsoft.com/fwlink/?LinkID=135170
+SignerCertificate :
+
+
+Get-FileHash $exe -Algorithm SHA256
+
+Algorithm       Hash                                                                   Path
+---------       ----                                                                   ----
+SHA256          5B41D8BCF410BCFBB1189806FAC6983118BA047F5149D6DBF423FF86AB591F1E       C:\tools\iperf3.exe
+
+
+Get-WinEvent -FilterHashtable @{
+    LogName = 'Microsoft-Windows-CodeIntegrity/Operational'
+    StartTime = (Get-Date).AddHours(-2)
+} -MaxEvents 20 |
+    Format-List TimeCreated, Id, Message
+
+
+TimeCreated : 24/11/2026 09:34:14
+Id          : 3118
+Message     : Smart App Control Block Deteails
+
+TimeCreated : 24/11/2026 09:34:14
+Id          : 3089
+Message     : Signature information for another event. Match using the Correlation Id.
+
+TimeCreated : 24/11/2026 09:34:14
+Id          : 3077
+Message     : Code Integrity determined that a process (\Device\HarddiskVolume3\Windows\System32\WindowsPowerShell\v1.0\powershell.exe) attempted to load
+              \Device\HarddiskVolume3\tools\iperf3.exe that did not meet the Enterprise signing level requirements or violated code integrity policy (Policy
+              ID:{0283ac0f-fff1-49ae-ada1-8a933130cad6}).
+
+TimeCreated : 24/11/2026 09:34:14
+Id          : 3089
+Message     : Signature information for another event. Match using the Correlation Id.
+

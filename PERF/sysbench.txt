@@ -1,0 +1,213 @@
+Sysbench — это универсальная утилита командной строки 
+для проведения нагрузочного тестирования (benchmarking) операционных систем, 
+процессоров, оперативной памяти, дисковой подсистемы и баз данных.
+
+Сколько операций в секунду способен выполнять процессор?
+Какую пропускную способность обеспечивает оперативная память?
+Какова скорость случайного чтения и записи на диске?
+Сколько SQL-транзакций в секунду обрабатывает MySQL?
+Как изменяется производительность при увеличении количества параллельных потоков?
+Где находится предел производительности сервера?
+
+Sysbench поддерживает несколько типов тестов (workloads).
+
+CPU	cpu	Вычислительную производительность
+Memory	memory	Скорость чтения и записи RAM
+Disk I/O	fileio	Производительность файловой системы
+Threads	threads	Производительность потоков и синхронизации
+Mutex	mutex	Конкуренцию за блокировки
+Database	oltp_read_write	Производительность транзакций БД
+
+---------------------------------------------------------------------------------
+
+sudo apt update
+sudo apt install sysbench
+
+sysbench --version
+>>sysbench 1.0.20
+
+Практически все тесты Sysbench запускаются по единой схеме:
+
+1. Prepare
+   
+   Подготовка тестовых данных, если они необходимы.
+   sysbench fileio prepare
+
+2. Run
+   
+   Выполнение нагрузочного теста.
+   sysbench fileio run
+
+3. Cleanup
+   
+   Удаление временных тестовых данных.
+   sysbench fileio cleanup
+
+Не каждый тест требует всех трёх этапов. Например, CPU и Memory можно запускать непосредственно через run.
+
+
+------------------------------------------------------------------------------------------------------------
+sysbench fileio run --file-test-mode=seqwr
+sysbench 1.0.20 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 1
+Initializing random number generator from current time
+
+
+Extra file open flags: (none)
+128 files, 16MiB each
+2GiB total file size
+Block size 16KiB
+Periodic FSYNC enabled, calling fsync() each 100 requests.
+Calling fsync() at the end of test, Enabled.
+Using synchronous I/O mode
+Doing sequential write (creation) test
+Initializing worker threads...
+
+Threads started!
+
+
+File operations:
+    reads/s:                      0.00
+    writes/s:                     6981.26
+    fsyncs/s:                     8944.11
+
+Throughput:
+    read, MiB/s:                  0.00
+    written, MiB/s:               109.08
+
+General statistics:
+    total time:                          10.0110s
+    total number of events:              159325
+
+Latency (ms):
+         min:                                    0.00
+         avg:                                    0.06
+         max:                                   31.11
+         95th percentile:                        0.10
+         sum:                                 9934.32
+
+Threads fairness:
+    events (avg/stddev):           159325.0000/0.00
+    execution time (avg/stddev):   9.9343/0.00
+
+----------------------------------------------------------------------------
+
+sysbench [options] test_name command
+
+--threads=N	Количество параллельных потоков
+--time=N	Продолжительность теста в секундах
+--events=N	Ограничение общего количества операций
+--warmup-time=N	Время прогрева перед измерениями
+--report-interval=N	Интервал промежуточной статистики
+--rate=N	Ограничение интенсивности нагрузки
+--percentile=N	Процентиль времени выполнения операций
+
+
+-------------------------------------------------------------------------------
+
+sysbench memory \
+  --memory-oper=write \
+  --memory-block-size=1K \
+  --memory-total-size=10G \
+  --threads=4 \
+  run
+
+
+sysbench cpu --threads=1 --time=30 run
+sysbench 1.0.20 (using system LuaJIT 2.1.0-beta3)
+
+Running the test with following options:
+Number of threads: 1
+Initializing random number generator from current time
+
+
+Prime numbers limit: 10000
+
+Initializing worker threads...
+
+Threads started!
+
+CPU speed:
+    events per second:  3661.58
+
+General statistics:
+    total time:                          30.0002s
+    total number of events:              109853
+
+Latency (ms):
+         min:                                    0.26
+         avg:                                    0.27
+         max:                                    7.33
+         95th percentile:                        0.30
+         sum:                                29971.08
+
+Threads fairness:
+    events (avg/stddev):           109853.0000/0.00
+    execution time (avg/stddev):   29.9711/0.00
+
+
+
+sysbench memory \
+  --memory-oper=write \
+  --memory-block-size=1K \
+  --memory-total-size=10G \
+  --threads=4 \
+  run
+
+
+---------------------------------------------------------------------------------------------------
+
+OLTP — это тип нагрузки, характерный для систем, которые постоянно выполняют небольшие транзакции:
+- интернет-магазины;
+- банковские системы;
+- CRM;
+- системы учёта;
+- backend-приложения.
+Sysbench умеет создавать тестовые таблицы в MySQL и выполнять над ними транзакции.
+
+sysbench oltp_read_write \
+  --db-driver=mysql \
+  --mysql-host=127.0.0.1 \
+  --mysql-port=3306 \
+  --mysql-user=sbuser \
+  --mysql-password=secret \
+  --mysql-db=sbtest \
+  --tables=10 \
+  --table-size=100000 \
+  prepare
+
+sysbench oltp_read_write \
+  --db-driver=mysql \
+  --mysql-host=127.0.0.1 \
+  --mysql-port=3306 \
+  --mysql-user=sbuser \
+  --mysql-password=secret \
+  --mysql-db=sbtest \
+  --tables=10 \
+  --table-size=100000 \
+  --threads=16 \
+  --time=60 \
+  --warmup-time=10 \
+  --report-interval=5 \
+  run
+
+sysbench oltp_read_write \
+  --db-driver=mysql \
+  --mysql-host=127.0.0.1 \
+  --mysql-user=sbuser \
+  --mysql-password=secret \
+  --mysql-db=sbtest \
+  --tables=10 \
+  cleanup
+
+--------------------------------------------------------------------------------
+Sysbench — синтетический benchmark. Его результаты не обязательно отражают поведение реального приложения.
+CPU-тест не проверяет производительность всего приложения.
+Memory-тест не заменяет полноценный анализ NUMA и пропускной способности памяти.
+File I/O зависит от файловой системы, кеширования и настроек хранения.
+OLTP-результаты зависят от конфигурации самой БД, индексов, размера данных и аппаратных ресурсов.
+Для достоверного сравнения необходимо сохранять одинаковые условия экспериментов.
+
+
