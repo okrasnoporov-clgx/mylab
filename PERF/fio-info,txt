@@ -1,0 +1,286 @@
+как устроена генерация дисковой нагрузки;
+как читать результаты IOPS, Bandwidth и Latency;
+чем отличаются последовательные и случайные операции;
+как глубина очереди (Queue Depth) и количество потоков влияют на производительность;
+как выявлять узкие места дисковой подсистемы;
+как результаты тестирования связаны с реальной работой приложений и баз данных.
+
+1	Sequential Write	Последовательная запись, MB/s
+2	Sequential Read	Последовательное чтение, MB/s
+3	Random Read 4K	IOPS и задержки
+4	Random Write 4K	Производительность случайной записи
+5	Mixed Read/Write	Смешанные нагрузки
+6	Queue Depth	Влияние глубины очереди
+7	numjobs	Параллельная нагрузка
+8	Block Size	Влияние размера блока
+9	Latency	Средняя задержка, p95, p99, p99.9
+10	Job Files	Создание воспроизводимых сценариев тестирования
+
+IOPS — количество операций ввода-вывода в секунду.
+Bandwidth — пропускная способность, например MiB/s.
+Latency — время выполнения операции ввода-вывода.
+
+
+sudo apt update
+sudo apt install fio -y
+
+fio --version
+>>>> 3.36
+
+which fio
+/usr/bin/fio
+
+mkdir -p ~/fio-lab
+cd ~/fio-lab
+
+
+df -h .
+lsblk
+
+fio --name=seq-write \
+    --filename=./fio-test.dat \
+    --size=1G \
+    --rw=write \
+    --bs=1M \
+    --ioengine=libaio \
+    --iodepth=1 \
+    --direct=1 \
+    --numjobs=1 \
+    --group_reporting
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+seq-write: (g=0): rw=write, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=libaio, iodepth=1
+fio-3.36
+Starting 1 process
+seq-write: Laying out IO file (1 file / 1024MiB)
+Jobs: 1 (f=1)
+seq-write: (groupid=0, jobs=1): err= 0: pid=1178: Mon Nov 23 11:16:51 2026
+  write: IOPS=1126, BW=1127MiB/s (1181MB/s)(1024MiB/909msec); 0 zone resets
+    slat (usec): min=39, max=728, avg=70.08, stdev=28.39
+    clat (usec): min=420, max=16645, avg=814.59, stdev=899.39
+     lat (usec): min=467, max=16803, avg=884.67, stdev=906.86
+    clat percentiles (usec):
+     |  1.00th=[  424],  5.00th=[  429], 10.00th=[  437], 20.00th=[  453],
+     | 30.00th=[  506], 40.00th=[  545], 50.00th=[  578], 60.00th=[  594],
+     | 70.00th=[  611], 80.00th=[  685], 90.00th=[ 1909], 95.00th=[ 2180],
+     | 99.00th=[ 3851], 99.50th=[ 4555], 99.90th=[ 9896], 99.95th=[16581],
+     | 99.99th=[16581]
+   bw (  KiB/s): min=905216, max=905216, per=78.47%, avg=905216.00, stdev= 0.00, samples=1
+   iops        : min=  884, max=  884, avg=884.00, stdev= 0.00, samples=1
+  lat (usec)   : 500=28.32%, 750=55.27%, 1000=2.25%
+  lat (msec)   : 2=4.88%, 4=8.40%, 10=0.78%, 20=0.10%
+  cpu          : usr=3.96%, sys=5.29%, ctx=1025, majf=0, minf=12
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=0,1024,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+  WRITE: bw=1127MiB/s (1181MB/s), 1127MiB/s-1127MiB/s (1181MB/s-1181MB/s), io=1024MiB (1074MB), run=909-909msec
+
+Disk stats (read/write):
+  sdd: ios=0/996, sectors=0/2039808, merge=0/0, ticks=0/804, in_queue=804, util=81.53%
+
+
+
+lsblk -o NAME,TYPE,SIZE,FSTYPE,MOUNTPOINTS,MODEL,ROTA
+
+ >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+NAME
+    TYPE   SIZE FSTYPE MOUNTPOINTS      MODEL        ROTA
+sda disk 388.4M ext4                    Virtual Disk    1
+sdb disk   186M ext4                    Virtual Disk    1
+sdc disk     1G swap   [SWAP]           Virtual Disk    1
+sdd disk     1T ext4   /mnt/wslg/distro Virtual Disk    1
+
+findmnt -T "$HOME"
+
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+TARGET
+  SOURCE   FSTYPE OPTIONS
+/ /dev/sdd ext4   rw,relatime,discard,errors=remount-ro,data=ordered
+
+
+free -h
+>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+               total        used        free      shared  buff/cache   available
+Mem:           3.8Gi       442Mi       3.4Gi       3.4Mi       152Mi       3.4Gi
+Swap:          1.0Gi          0B       1.0Gi
+
+
+df -h .
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/sdd       1007G  3.0G  953G   1% /
+
+-------------------------------------------------------------------
+
+
+
+fio --name=seq-write-60s \
+    --filename=./fio-test.dat \
+    --size=4G \
+    --rw=write \
+    --bs=1M \
+    --ioengine=libaio \
+    --iodepth=1 \
+    --direct=1 \
+    --numjobs=1 \
+    --time_based \
+    --runtime=60 \
+    --ramp_time=10 \
+    --group_reporting
+
+seq-write-60s: (g=0): rw=write, bs=(R) 1024KiB-1024KiB, (W) 1024KiB-1024KiB, (T) 1024KiB-1024KiB, ioengine=libaio, iodepth=1
+fio-3.36
+Starting 1 process
+seq-write-60s: Laying out IO file (1 file / 4096MiB)
+Jobs: 1 (f=1): [W(1)][100.0%][w=1636MiB/s][w=1636 IOPS][eta 00m:00s]
+seq-write-60s: (groupid=0, jobs=1): err= 0: pid=1361: Mon Nov 23 11:51:18 2026
+  write: IOPS=1664, BW=1665MiB/s (1746MB/s)(97.5GiB/60001msec); 0 zone resets
+    slat (usec): min=35, max=5599, avg=65.89, stdev=43.86
+    clat (usec): min=53, max=8832, avg=532.89, stdev=113.99
+     lat (usec): min=449, max=8894, avg=598.78, stdev=123.44
+    clat percentiles (usec):
+     |  1.00th=[  416],  5.00th=[  449], 10.00th=[  469], 20.00th=[  478],
+     | 30.00th=[  498], 40.00th=[  523], 50.00th=[  537], 60.00th=[  545],
+     | 70.00th=[  553], 80.00th=[  570], 90.00th=[  578], 95.00th=[  603],
+     | 99.00th=[  725], 99.50th=[  832], 99.90th=[ 1336], 99.95th=[ 2409],
+     | 99.99th=[ 5932]
+   bw (  MiB/s): min= 1416, max= 1798, per=100.00%, avg=1664.77, stdev=44.68, samples=119
+   iops        : min= 1416, max= 1798, avg=1664.70, stdev=44.68, samples=119
+  lat (usec)   : 100=0.01%, 500=30.18%, 750=69.01%, 1000=0.58%
+  lat (msec)   : 2=0.17%, 4=0.04%, 10=0.03%
+  cpu          : usr=5.83%, sys=6.58%, ctx=99883, majf=0, minf=36
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=0,99881,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+  WRITE: bw=1665MiB/s (1746MB/s), 1665MiB/s-1665MiB/s (1746MB/s-1746MB/s), io=97.5GiB (105GB), run=60001-60001msec
+
+Disk stats (read/write):
+  sdd: ios=0/114175, sectors=0/233717184, merge=0/115, ticks=0/62060, in_queue=62099, util=87.45%
+
+
+
+
+--------------------------------------------------------------------------------------
+IOPS — сколько операций чтения выполняется за секунду.
+BW — какая суммарная пропускная способность получается.
+clat p50, p95, p99 — задержки выполнения операций.
+IO depths — действительно ли fio работает с глубиной очереди 1.
+
+
+fio --name=rand-read-4k \
+    --filename=./fio-test.dat \
+    --size=4G \
+    --rw=randread \
+    --bs=4k \
+    --ioengine=libaio \
+    --iodepth=1 \
+    --direct=1 \
+    --numjobs=1 \
+    --time_based \
+    --runtime=60 \
+    --ramp_time=10 \
+    --group_reporting
+
+rand-read-4k: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=libaio, iodepth=1
+fio-3.36
+Starting 1 process
+Jobs: 1 (f=1): [r(1)][100.0%][r=17.2MiB/s][r=4401 IOPS][eta 00m:00s]
+rand-read-4k: (groupid=0, jobs=1): err= 0: pid=1425: Mon Nov 23 12:07:23 2026
+  read: IOPS=3556, BW=13.9MiB/s (14.6MB/s)(834MiB/60001msec)
+    slat (usec): min=4, max=5160, avg=12.82, stdev=13.85
+    clat (usec): min=75, max=17098, avg=266.38, stdev=104.76
+     lat (usec): min=94, max=17166, avg=279.20, stdev=106.30
+    clat percentiles (usec):
+     |  1.00th=[  147],  5.00th=[  180], 10.00th=[  190], 20.00th=[  215],
+     | 30.00th=[  258], 40.00th=[  273], 50.00th=[  277], 60.00th=[  281],
+     | 70.00th=[  285], 80.00th=[  289], 90.00th=[  302], 95.00th=[  338],
+     | 99.00th=[  437], 99.50th=[  498], 99.90th=[  840], 99.95th=[ 1188],
+     | 99.99th=[ 5669]
+   bw (  KiB/s): min=12360, max=19896, per=100.00%, avg=14243.99, stdev=1328.82, samples=119
+   iops        : min= 3090, max= 4974, avg=3560.97, stdev=332.17, samples=119
+  lat (usec)   : 100=0.03%, 250=27.75%, 500=71.74%, 750=0.36%, 1000=0.06%
+  lat (msec)   : 2=0.03%, 4=0.02%, 10=0.02%, 20=0.01%
+  cpu          : usr=1.73%, sys=7.33%, ctx=213406, majf=0, minf=40
+  IO depths    : 1=100.0%, 2=0.0%, 4=0.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=213401,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=1
+
+Run status group 0 (all jobs):
+   READ: bw=13.9MiB/s (14.6MB/s), 13.9MiB/s-13.9MiB/s (14.6MB/s-14.6MB/s), io=834MiB (874MB), run=60001-60001msec
+
+Disk stats (read/write):
+  sdd: ios=246702/25, sectors=1973856/352, merge=30/6, ticks=64083/15, in_queue=64103, util=85.76%
+
+
+
+----------------------------------------------------------------------------------
+
+
+fio --name=rand-read-4k-qd4 \
+    --filename=./fio-test.dat \
+    --size=4G \
+    --rw=randread \
+    --bs=4k \
+    --ioengine=libaio \
+    --iodepth=4 \
+    --direct=1 \
+    --numjobs=1 \
+    --time_based \
+    --runtime=60 \
+    --ramp_time=10 \
+    --group_reporting
+
+rand-read-4k-qd4: (g=0): rw=randread, bs=(R) 4096B-4096B, (W) 4096B-4096B, (T) 4096B-4096B, ioengine=libaio, iodepth=4
+fio-3.36
+Starting 1 process
+Jobs: 1 (f=1): [r(1)][100.0%][r=71.1MiB/s][r=18.2k IOPS][eta 00m:00s]
+rand-read-4k-qd4: (groupid=0, jobs=1): err= 0: pid=1565: Mon Nov 23 12:25:13 2026
+  read: IOPS=17.6k, BW=68.9MiB/s (72.2MB/s)(4132MiB/60001msec)
+    slat (nsec): min=1612, max=5496.8k, avg=6573.09, stdev=10192.33
+    clat (usec): min=17, max=16514, avg=219.28, stdev=82.29
+     lat (usec): min=70, max=16517, avg=225.85, stdev=82.72
+    clat percentiles (usec):
+     |  1.00th=[  123],  5.00th=[  161], 10.00th=[  180], 20.00th=[  192],
+     | 30.00th=[  200], 40.00th=[  206], 50.00th=[  212], 60.00th=[  219],
+     | 70.00th=[  227], 80.00th=[  239], 90.00th=[  269], 95.00th=[  302],
+     | 99.00th=[  379], 99.50th=[  416], 99.90th=[  668], 99.95th=[  906],
+     | 99.99th=[ 3326]
+   bw (  KiB/s): min=58095, max=81072, per=100.00%, avg=70592.22, stdev=3417.68, samples=119
+   iops        : min=14523, max=20268, avg=17647.87, stdev=854.42, samples=119
+  lat (usec)   : 20=0.01%, 50=0.01%, 100=0.35%, 250=85.16%, 500=14.29%
+  lat (usec)   : 750=0.12%, 1000=0.04%
+  lat (msec)   : 2=0.02%, 4=0.01%, 10=0.01%, 20=0.01%
+  cpu          : usr=4.58%, sys=16.12%, ctx=436130, majf=0, minf=36
+  IO depths    : 1=0.0%, 2=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, >=64=0.0%
+     submit    : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     complete  : 0=0.0%, 4=100.0%, 8=0.0%, 16=0.0%, 32=0.0%, 64=0.0%, >=64=0.0%
+     issued rwts: total=1057662,0,0,0 short=0,0,0,0 dropped=0,0,0,0
+     latency   : target=0, window=0, percentile=100.00%, depth=4
+
+Run status group 0 (all jobs):
+   READ: bw=68.9MiB/s (72.2MB/s), 68.9MiB/s-68.9MiB/s (72.2MB/s-72.2MB/s), io=4132MiB (4332MB), run=60001-60001msec
+
+Disk stats (read/write):
+  sdd: ios=1226196/53, sectors=9810016/720, merge=0/11, ticks=247206/31, in_queue=247241, util=94.84%
+
+
+QD	IOPS	Average latency
+1	3 556	279 µs
+4	17 648	226 µs
+8	?	?
+16	?	?
+32	?	?
+64	?	?
+
+
+----------------------------------------------------------------------------------------
+
