@@ -1,0 +1,66 @@
+multipass shell ansible-controller-1
+
+ansible all -m ping
+
+ubuntu@ansible-controller-1:~$ cd ~/ansible-lab
+
+ubuntu@ansible-controller-1:~/ansible-lab$ ls
+inventory.ini
+
+ubuntu@ansible-controller-1:~/ansible-lab$ cat inventory.ini
+[webservers]
+anode1 ansible_host=172.20.200.59
+anode2 ansible_host=172.20.194.61
+
+### SSH CONFIGURATION
+ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
+
+ssh-copy-id ubuntu@172.19.70.57
+ssh-copy-id ubuntu@172.19.68.189
+
+-----------------------------------MULTIPASS ISSUE ------------------------
+ssh-copy-id ubuntu@172.19.70.57
+ssh-copy-id ubuntu@172.19.68.189
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/home/ubuntu/.ssh/id_ed25519.pub"
+The authenticity of host '172.19.70.57 (172.19.70.57)' can't be established.
+ED25519 key fingerprint is: SHA256:KATnkOlWdrWQn24JFupZbFonk+mJzLixK+k2qCOJzWQ
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+ubuntu@172.19.70.57: Permission denied (publickey).
+/usr/bin/ssh-copy-id: INFO: Source of key(s) to be installed: "/home/ubuntu/.ssh/id_ed25519.pub"
+The authenticity of host '172.19.68.189 (172.19.68.189)' can't be established.
+ED25519 key fingerprint is: SHA256:zCNsPLpK8v1CF0u2WJnwHJzuIgWM/traAMl4jkBJxGg
+This key is not known by any other names.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+/usr/bin/ssh-copy-id: INFO: attempting to log in with the new key(s), to filter out any that are already installed
+/usr/bin/ssh-copy-id: INFO: 1 key(s) remain to be installed -- if you are prompted now it is to install the new keys
+ubuntu@172.19.68.189: Permission denied (publickey).
+------------------------------------------------------------------------
+-------------------RESOLVING ---------------------
+cat ~/.ssh/id_ed25519.pub
+
+$pubKey = (multipass exec ansible-controller-1 -- cat /home/ubuntu/.ssh/id_ed25519.pub).Trim()
+$cmd = "mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo '$pubKey' >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys && sort -u ~/.ssh/authorized_keys -o ~/.ssh/authorized_keys"
+multipass exec anode1 -- bash -c $cmd
+multipass exec anode2 -- bash -c $cmd
+-----------------------------------------------------------
+
+ssh ubuntu@172.19.70.57 "hostname && python3 --version"
+ssh ubuntu@172.19.68.189 "hostname && python3 --version"
+
+anode1
+Python 3.14.4
+anode2
+Python 3.14.4
+
+ansible all -i inventory.ini -m ping
+anode2 | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
+anode1 | SUCCESS => {
+    "changed": false,
+    "ping": "pong"
+}
