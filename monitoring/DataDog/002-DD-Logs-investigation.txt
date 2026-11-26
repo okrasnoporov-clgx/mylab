@@ -1,0 +1,16 @@
+Logs > Log Explorer
+
+отфильтруйте по тегам объекта, например:
+
+kube_cluster_name:<имя_кластера>
+
+kube_namespace:<namespace>
+
+pod_name:<имя_пода>
+
+container_name:<имя_контейнера> (удобно разделять логи вашего Java-контейнера и istio-proxy, если логи sidecar собираются).
+
+По времени инцидента: синхронизируйте временное окно (timeframe) с моментом, когда узел/контейнер покраснел, и добавьте поиск по уровням ошибок (status:error или ключевые слова вроде OutOfMemoryError, Exception, 5xx).
+
+По логам можно искать - message:*fail*
+
