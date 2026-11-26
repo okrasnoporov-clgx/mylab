@@ -1,0 +1,44 @@
+touch ~/ansible-lab/ansible.cfg
+
+[defaults]
+inventory = ./inventory.ini #избавляет от необходимости каждый раз писать -i inventory.ini
+remote_user = ubuntu
+host_key_checking = False #для учебных стендов
+retry_files_enabled = False
+interpreter_python = /usr/bin/python3
+timeout = 30
+
+[privilege_escalation]
+become = False
+become_method = sudo
+become_user = root
+become_ask_pass = False
+
+[ssh_connection]
+pipelining = True #уменьшает число SSH-сессий на задачу; на целевых узлах в sudoers не должен быть включён requiretty
+
+
+-------------- With config ---------------------
+
+cd ~/ansible-lab
+
+# 1. Проверка доступности всех хостов (флаг -i уже не обязателен)
+ansible all -m ping
+
+# 2. Проверка свободного места на дисках на обоих узлах
+ansible all -m shell -a "df -h /"
+
+# 3. Установка утилиты curl с повышением прав (-b = --become)
+ansible all -m apt -a "name=curl state=present update_cache=yes" -b
+
+# 4. Проверка статуса сервиса systemd (например, ssh)
+ansible all -m service -a "name=ssh state=started" -b
+
+-------------------------------------------------------------------
+
+
+Static и Dynamic Inventory
+Static Inventory — статический файл (или директория со статическими файлами), который вы ведёте сами (вручную или генерируете из CMDB/Terraform). Подходит для учебных стендов, небольших инфраструктур или фиксации известных узлов.
+Dynamic Inventory — динамическое получение списка хостов и их метаданных в момент запуска Ansible из внешнего источника (AWS, Azure, GCP, VMware, Kubernetes, Docker, NetBox) через inventory-плагины (рекомендуемый современный способ) или исполняемые скрипты, возвращающие JSON определённой структуры.
+
+

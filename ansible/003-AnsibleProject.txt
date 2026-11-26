@@ -1,0 +1,108 @@
+Сквозной проект «Nginx + MySQL + Log Shipper»:
+anode1 (172.19.70.57) — веб-узел с Nginx и нашим кастомным скриптом (например, Python/Bash log shipper), который парсит/читает логи Nginx и отправляет записи в БД.
+anode2 (172.19.68.189) — узел с MySQL / MariaDB, базой данных и пользователем для приёма логов.
+На этот проект мы будем нанизывать инвентарь, переменные, шаблоны (template), хэндлеры (handlers), роли (roles), работу с Vault/секретами, проверки идемпотентности и т.д.
+
+------------------------
+
+host_vars и group_vars
+Вместо того чтобы сваливать все переменные в один файл инвентаря, их принято выносить в каталоги host_vars/ и group_vars/ рядом с инвентарём (или рядом с playbook):
+
+group_vars/all.yml (или group_vars/all/ — папка с несколькими .yml-файлами) — переменные для всех хостов.
+
+group_vars/web.yml — переменные только для группы web (например, порт Nginx, путь к логам).
+
+group_vars/db.yml — переменные только для группы db (например, имя БД и пользователя MySQL).
+
+host_vars/anode1.yml — переменные конкретно для anode1.
+
+-----------------------------
+
+Переменные подключения: ansible_host, ansible_user, ansible_port
+Это специальные переменные (connection variables), управляющие тем, как Ansible подключается к хосту:
+
+ansible_host — реальный IP-адрес или DNS-имя, по которому нужно стучаться (если имя узла в инвентаре, например anode1, отличается от адреса подключения).
+
+ansible_user — пользователь на удалённой машине (в нашем случае ubuntu).
+
+ansible_port — SSH-порт (по умолчанию 22, можно переопределить, например 2222).
+
+--------------------
+
+Порядок применения переменных (Precedence)
+В Ansible действует строгая иерархия приоритетов переменных (от низкого приоритета к высокому — значение с более высоким приоритетом перезаписывает значение с более низким):
+
+Role defaults (roles/<role>/defaults/main.yml) — самый низкий приоритет, легко переопределяются.
+
+Inventory file / script group vars (group_vars/all, затем родительские группы, затем дочерние группы).
+
+group_vars/ рядом с playbook или inventory (в том же порядке иерархии групп: all → родительские группы → дочерние группы).
+
+Inventory file / script host vars и host_vars/ для конкретного хоста.
+
+Facts (собранные модулем setup факты о системе, например ansible_facts['os_family']).
+
+Playbook vars / vars_files.
+
+Task vars / set_fact / include_vars.
+
+Extra vars (-e / --extra-vars в командной строке) — наивысший приоритет, перебивает почти всё остальное.
+
+
+------------------------
+
+~/ansible-lab/
+├── ansible.cfg
+├── inventory.ini
+├── group_vars/
+│   ├── all.yml
+│   ├── web.yml
+│   └── db.yml
+└── host_vars/
+    └── anode1.yml
+
+--------------------------------------
+
+# Граф групп и хостов
+ansible-inventory --graph
+
+# Итоговые переменные для anode1 (видно слияние all + web + host_vars/anode1)
+ansible-inventory --host anode1
+
+# Итоговые переменные для anode2 (all + db)
+ansible-inventory --host anode2
+
+# Быстрая проверка подстановки переменных через debug
+ansible app_stack -m debug -a "msg='Host={{ inventory_hostname }} IP={{ ansible_host }} DB={{ db_name }}'"
+
+------------------------------------
+
+# Граф групп и хостов
+ansible-inventory --graph
+
+@all:
+  |--@ungrouped:
+  |--@app_stack:
+  |  |--@web:
+  |  |  |--anode1
+  |  |--@db:
+  |  |  |--anode2
+
+# Итоговые переменные для anode1 (видно слияние all + web + host_vars/anode1)
+ansible-inventory --host anode1
+
+# Итоговые переменные для anode2 (all + db)
+ansible-inventory --host anode2
+
+# Быстрая проверка подстановки переменных через debug
+ansible app_stack -m debug -a "msg='Host={{ inventory_hostname }} IP={{ ansible_host }} DB={{ db_name }}'"
+
+anode2 | SUCCESS => {
+    "msg": "Host=anode2 IP=172.19.68.189 DB=nginx_logs"
+}
+anode1 | SUCCESS => {
+    "msg": "Host=anode1 IP=172.19.70.57 DB=nginx_logs"
+}
+
+------------------------------------
+

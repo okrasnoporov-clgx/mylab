@@ -61,5 +61,3 @@ cat inventory.ini
 
 
 
-### SSH CONFIGURATION
-
