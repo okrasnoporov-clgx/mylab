@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          sparse-checkout: localtools/netcalc
+          sparse-checkout-cone-mode: true
 
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
@@ -52,6 +55,16 @@ jobs:
           Compress-Archive -Path "$publishDirectory\*" -DestinationPath $archivePath -CompressionLevel Optimal
           Add-Content -Path $env:GITHUB_ENV -Value "ARCHIVE_PATH=$archivePath"
 
+      - name: Create source archive
+        shell: pwsh
+        run: |
+          $sourceArchivePath = Join-Path $env:RUNNER_TEMP "NetCalc-$env:VERSION-source.zip"
+          git archive --format=zip --output "$sourceArchivePath" HEAD localtools/netcalc
+          if ($LASTEXITCODE -ne 0) {
+              throw "Failed to create source archive."
+          }
+          Add-Content -Path $env:GITHUB_ENV -Value "SOURCE_ARCHIVE_PATH=$sourceArchivePath"
+
       - name: Create GitHub Release
         shell: pwsh
         env:
@@ -64,6 +77,6 @@ jobs:
           Unsigned: this release is not Authenticode-signed. Smart App Control may block it.
           "@
 
-          gh release create $releaseTag $env:ARCHIVE_PATH `
+          gh release create $releaseTag $env:ARCHIVE_PATH $env:SOURCE_ARCHIVE_PATH `
             --title "NetCalc $env:VERSION (unsigned)" `
             --notes $releaseNotes
