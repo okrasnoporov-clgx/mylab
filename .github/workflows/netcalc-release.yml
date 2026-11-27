@@ -1,0 +1,69 @@
+name: Publish NetCalc release
+
+on:
+  push:
+    tags:
+      - 'netcalc/v*'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Validate release tag
+        shell: pwsh
+        run: |
+          $tag = $env:GITHUB_REF_NAME
+          if ($tag -match '^netcalc/v(?<version>\d+\.\d+\.\d+)$') {
+              $version = $Matches.version
+          } else {
+              throw "Expected tag format netcalc/vX.Y.Z, got: $tag"
+          }
+          Add-Content -Path $env:GITHUB_ENV -Value "VERSION=$version"
+
+      - name: Publish Windows x64 application
+        shell: pwsh
+        run: |
+          dotnet publish .\localtools\netcalc\NetCalc.csproj `
+            -c Release -r win-x64 --self-contained false `
+            "-p:Version=$env:VERSION"
+
+      - name: Create unsigned release archive
+        shell: pwsh
+        run: |
+          $publishDirectory = ".\localtools\netcalc\bin\Release\net8.0-windows\win-x64\publish"
+          if (-not (Test-Path $publishDirectory)) {
+              throw "Publish output not found: $publishDirectory"
+          }
+
+          $archiveName = "NetCalc-$env:VERSION-unsigned-win-x64.zip"
+          $archivePath = Join-Path $env:RUNNER_TEMP $archiveName
+          Compress-Archive -Path "$publishDirectory\*" -DestinationPath $archivePath -CompressionLevel Optimal
+          Add-Content -Path $env:GITHUB_ENV -Value "ARCHIVE_PATH=$archivePath"
+
+      - name: Create GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $releaseTag = $env:GITHUB_REF_NAME
+          $releaseNotes = @"
+          Windows x64 build. Requires the .NET 8 Desktop Runtime.
+
+          Unsigned: this release is not Authenticode-signed. Smart App Control may block it.
+          "@
+
+          gh release create $releaseTag $env:ARCHIVE_PATH `
+            --title "NetCalc $env:VERSION (unsigned)" `
+            --notes $releaseNotes
