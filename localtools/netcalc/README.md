@@ -28,6 +28,17 @@ dotnet publish .\NetCalc.csproj -c Release -r win-x64 --self-contained false
 
 Файлы появятся в `.\bin\Release\net8.0-windows\win-x64\publish\`.
 
+## Релиз через GitHub Actions
+
+Workflow `.github/workflows/netcalc-release.yml` запускается только при отправке тега формата `netcalc/vX.Y.Z`. Например, чтобы выпустить версию `1.2.3`:
+
+```powershell
+git tag -a netcalc/v1.2.3 -m "NetCalc 1.2.3"
+git push origin netcalc/v1.2.3
+```
+
+GitHub Actions соберет приложение и создаст GitHub Release с архивом `NetCalc-1.2.3-unsigned-win-x64.zip`. Архив содержит framework-dependent публикацию: для запуска нужен .NET 8 Desktop Runtime. Приложение не подписано; Smart App Control может его заблокировать.
+
 ## Подпись для Smart App Control
 
 Чтобы приложение могло пройти Smart App Control, подпишите его действительным сертификатом для подписи кода от доверенного издателя, цепочка которого ведет к центру сертификации из Microsoft Trusted Root Program. Самоподписанный сертификат для этого не подходит. Подробности и альтернативы распространения описаны в документации Microsoft: [подпись для Smart App Control](https://learn.microsoft.com/en-us/windows/apps/develop/smart-app-control/code-signing-for-smart-app-control) и [варианты подписи приложений](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options).
