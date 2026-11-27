@@ -39,6 +39,8 @@ git push origin netcalc/v1.2.3
 
 GitHub Actions соберет приложение и создаст GitHub Release с архивом `NetCalc-1.2.3-unsigned-win-x64.zip`. Архив содержит framework-dependent публикацию: для запуска нужен .NET 8 Desktop Runtime. Приложение не подписано; Smart App Control может его заблокировать.
 
+Также workflow прикладывает `NetCalc-1.2.3-source.zip` только с отслеживаемыми Git файлами из `localtools/netcalc`. Автоматические ссылки GitHub **Source code (zip/tar.gz)** по-прежнему содержат весь репозиторий — изменить их состав нельзя.
+
 ## Подпись для Smart App Control
 
 Чтобы приложение могло пройти Smart App Control, подпишите его действительным сертификатом для подписи кода от доверенного издателя, цепочка которого ведет к центру сертификации из Microsoft Trusted Root Program. Самоподписанный сертификат для этого не подходит. Подробности и альтернативы распространения описаны в документации Microsoft: [подпись для Smart App Control](https://learn.microsoft.com/en-us/windows/apps/develop/smart-app-control/code-signing-for-smart-app-control) и [варианты подписи приложений](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/code-signing-options).
